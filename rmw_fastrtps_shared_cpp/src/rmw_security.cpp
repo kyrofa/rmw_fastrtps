@@ -41,7 +41,7 @@ const char logging_file_name[] = "logging.xml";
 // Logging properties
 const char logging_plugin_property_name[] = "dds.sec.log.plugin";
 const char log_file_property_name[] = "dds.sec.log.builtin.DDS_LogTopic.log_file";
-const char verbosity_property_name[] = "dds.sec.log.builtin.DDS_LogTopic.event_log_level";
+const char verbosity_property_name[] = "dds.sec.log.builtin.DDS_LogTopic.logging_level";
 const char distribute_enable_property_name[] =
   "dds.sec.log.builtin.DDS_LogTopic.distribute";
 const char distribute_depth_property_name[] =

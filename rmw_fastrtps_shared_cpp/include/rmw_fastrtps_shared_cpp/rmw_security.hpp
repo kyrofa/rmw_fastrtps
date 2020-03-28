@@ -12,15 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef RMW_FASTRTPS_SHARED_CPP__RMW_SECURITY_LOGGING_HPP_
-#define RMW_FASTRTPS_SHARED_CPP__RMW_SECURITY_LOGGING_HPP_
+#ifndef RMW_FASTRTPS_SHARED_CPP__RMW_SECURITY_HPP_
+#define RMW_FASTRTPS_SHARED_CPP__RMW_SECURITY_HPP_
 
 #include <string>
 
-#include "fastrtps/rtps/common/Property.h"
+#include "fastrtps/rtps/attributes/PropertyPolicy.h"
+
+bool apply_security_options(
+  const rmw_node_security_options_t & security_options,
+  eprosima::fastrtps::rtps::PropertyPolicy & policy);
 
 bool apply_logging_configuration_from_file(
   const std::string & xml_file_path,
-  eprosima::fastrtps::rtps::PropertySeq & properties);
+  eprosima::fastrtps::rtps::PropertyPolicy & policy);
 
-#endif  // RMW_FASTRTPS_SHARED_CPP__RMW_SECURITY_LOGGING_HPP_
+#endif  // RMW_FASTRTPS_SHARED_CPP__RMW_SECURITY_HPP_

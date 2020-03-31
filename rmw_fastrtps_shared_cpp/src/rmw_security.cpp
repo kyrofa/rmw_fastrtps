@@ -16,6 +16,7 @@
 
 #include <utility>
 #include <string>
+#include <map>
 
 #include "fastrtps/config.h"
 #include "rcutils/filesystem.h"
@@ -47,6 +48,26 @@ const char distribute_enable_property_name[] =
 const char distribute_depth_property_name[] =
   "com.rti.serv.secure.logging.distribute.writer_history_depth";
 
+const std::map<std::string, rmw_qos_profile_t> supported_profiles {
+  {"SENSOR_DATA", rmw_qos_profile_sensor_data},
+  {"PARAMETERS", rmw_qos_profile_parameters},
+  {"DEFAULT", rmw_qos_profile_default},
+  {"SERVICES_DEFAULT", rmw_qos_profile_services_default},
+  {"PARAMETER_EVENTS", rmw_qos_profile_parameter_events},
+  {"SYSTEM_DEFAULT", rmw_qos_profile_system_default},
+};
+
+const std::map<std::string, std::string> supported_verbosities {
+  {"EMERGENCY", "EMERGENCY_LEVEL"},
+  {"ALERT", "ALERT_LEVEL"},
+  {"CRITICAL", "CRITICAL_LEVEL"},
+  {"ERROR", "ERROR_LEVEL"},
+  {"WARNING", "WARNING_LEVEL"},
+  {"NOTICE", "NOTICE_LEVEL"},
+  {"INFORMATIONAL", "INFORMATIONAL_LEVEL"},
+  {"DEBUG", "DEBUG_LEVEL"},
+};
+
 struct security_files_t
 {
   std::string identity_ca_cert_path;
@@ -58,30 +79,26 @@ struct security_files_t
   std::string logging_path;
 };
 
-const struct
-{
-  const std::string name;
-  rmw_qos_profile_t profile;
-} supported_profiles[] =
-{
-  {"SENSOR_DATA", rmw_qos_profile_sensor_data},
-  {"PARAMETERS", rmw_qos_profile_parameters},
-  {"DEFAULT", rmw_qos_profile_default},
-  {"SERVICES_DEFAULT", rmw_qos_profile_services_default},
-  {"PARAMETER_EVENTS", rmw_qos_profile_parameter_events},
-  {"SYSTEM_DEFAULT", rmw_qos_profile_system_default},
-};
-
 bool string_to_rmw_qos_profile(const std::string & str, rmw_qos_profile_t & profile)
 {
-  for (const auto & item : supported_profiles) {
-    if (item.name == str) {
-      profile = item.profile;
-      return true;
-    }
+  try {
+    profile = supported_profiles.at(str);
+  } catch (std::out_of_range &) {
+    return false;
   }
 
-  return false;
+  return true;
+}
+
+bool string_to_rmw_verbosity(const std::string & str, std::string & verbosity)
+{
+  try {
+    verbosity = supported_verbosities.at(str);
+  } catch (std::out_of_range &) {
+    return false;
+  }
+
+  return true;
 }
 
 void add_property(
@@ -238,20 +255,32 @@ bool apply_logging_configuration_from_file(
 
   status = add_property_from_xml_element(
     properties,
-    verbosity_property_name,
-    *log_element,
-    "verbosity");
-  if (!status) {
-    return status;
-  }
-
-  status = add_property_from_xml_element(
-    properties,
     distribute_enable_property_name,
     *log_element,
     "distribute");
   if (!status) {
     return status;
+  }
+
+  auto verbosity_element = log_element->FirstChildElement("verbosity");
+  if (verbosity_element != nullptr) {
+    const char * verbosity_str = verbosity_element->GetText();
+    if (verbosity_str == nullptr) {
+      RMW_SET_ERROR_MSG("failed to set security logging verbosity: improper format");
+      return false;
+    }
+
+    std::string verbosity;
+    if (!string_to_rmw_verbosity(verbosity_str, verbosity)) {
+      RMW_SET_ERROR_MSG_WITH_FORMAT_STRING(
+        "failed to set security logging verbosity: %s is not a supported verbosity",
+        verbosity_str);
+      return false;
+    }
+
+    add_property(
+      properties,
+      eprosima::fastrtps::rtps::Property(verbosity_property_name, verbosity.c_str()));
   }
 
   auto qos_element = log_element->FirstChildElement("qos");

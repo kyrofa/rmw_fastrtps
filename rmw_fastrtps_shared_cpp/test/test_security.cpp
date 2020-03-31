@@ -262,7 +262,20 @@ TEST_F(SecurityTest, test_log_verbosity)
 
   property = verbosity_property(policy.properties());
   EXPECT_EQ(property.name(), verbosity_property_name);
-  EXPECT_EQ(property.value(), "CRITICAL");
+  EXPECT_EQ(property.value(), "CRITICAL_LEVEL");
+}
+
+TEST_F(SecurityTest, test_log_verbosity_invalid)
+{
+  std::string xml_file_path = write_logging_xml("<verbosity>INVALID_VERBOSITY</verbosity>");
+  eprosima::fastrtps::rtps::PropertyPolicy policy;
+  EXPECT_FALSE(apply_logging_configuration_from_file(xml_file_path, policy));
+  EXPECT_TRUE(rmw_error_is_set());
+  EXPECT_THAT(
+    rmw_get_error_string().str, HasSubstr(
+      "INVALID_VERBOSITY is not a supported verbosity"));
+
+  ASSERT_TRUE(policy.properties().empty());
 }
 
 TEST_F(SecurityTest, test_log_distribute)
@@ -373,7 +386,7 @@ TEST_F(SecurityTest, test_all)
 
   property = verbosity_property(policy.properties());
   EXPECT_EQ(property.name(), verbosity_property_name);
-  EXPECT_EQ(property.value(), "CRITICAL");
+  EXPECT_EQ(property.value(), "CRITICAL_LEVEL");
 
   property = distribute_enable_property(policy.properties());
   EXPECT_EQ(property.name(), distribute_enable_property_name);
